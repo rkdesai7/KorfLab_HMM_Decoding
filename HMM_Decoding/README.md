@@ -1,2 +1,2 @@
 These are python programs meant to decode Hidden Markov Models of exon and intron states of genetic sequences. Currently, the viterbi method is implemented. 
-Example Hidden Markov Models in the form of a .json can be found in the Data folder. 
+Example Hidden Markov Models in the form of a .json can be found in the Data folder. The term "order" describes the length of sequences used in calculating the emmission probability. For example, an order of 1 would indicate emmission probabilities for sequences of length 2 (AA = .1, AG = .2, ...). 
