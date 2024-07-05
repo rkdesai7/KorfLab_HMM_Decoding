@@ -1,6 +1,6 @@
 # Overview
 
-A project meant to decode Hidden Markov Models of exon and intron states of genetic sequences. 
+This is a project meant to Hidden Markov Models of exon and intron states of genetic sequences. 
 
 ### Data
 
