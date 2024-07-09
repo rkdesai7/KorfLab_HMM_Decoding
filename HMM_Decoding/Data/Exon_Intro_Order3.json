@@ -1,7 +1,4 @@
 {
-    "order": [
-        3
-    ],
     "states": [
         "exon",
         "intron"
