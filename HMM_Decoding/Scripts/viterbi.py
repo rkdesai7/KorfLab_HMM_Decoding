@@ -25,9 +25,11 @@ states = data["states"]
 transitions = log(data["transitions"])
 emits = log(data["emissions"])
 
-#initialize matrix
-matrix = [[(math.log(.5), -1)],
-          [(math.log(.5), -1)]]
+#initialize matrix and emmissions
+matrix = []
+p = math.log(1/len(states)) #initial state probability for index 0
+for i in range(len(states)):
+    matrix.append([(p, -1)])
 temp_emit = .25
 
 #fill matrix
