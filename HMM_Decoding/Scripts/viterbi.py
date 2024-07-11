@@ -13,7 +13,6 @@ def log(transition_probs):
         log_transition_probs[from_state] = log_to_probs
     return log_transition_probs
 
-
 #Initialization
 #read in fasta file and json
 sequence = 'GTATGATTTTTTAAAATTATAATTGTTTCTTTCGAAAAAAAAAATTTCATTTACAG'
@@ -34,7 +33,6 @@ p = math.log(1/len(states)) #initial state probability for index 0
 for i in range(len(states)):
     matrix.append([(p, -1)])
 temp_emit = .25
-
 
 #fill matrix
 n = 1
@@ -64,18 +62,14 @@ prev_state = matrix[num][length][1]
 output.append((sequence[length-1], state, prob))
 #run for rest of bases
 for i in range(1, length):
-    
     #extract current state, probability, and base
     state = states[prev_state]
     prob = matrix[prev_state][(i+1)*-1][0]
     base = sequence[(i+1)*-1]
-    
     #add to output
     output.append((base, state, prob))
-    
     #update traceback state
     prev_state = matrix[prev_state][(i+1)*-1][1]
-
 
 #Display Results
 output = output[::-1]
