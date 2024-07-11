@@ -1,5 +1,6 @@
 import math
 import json
+import pandas as pd
 
 # Function to convert probabilities to log scale
 def log(transition_probs):
@@ -13,20 +14,20 @@ def log(transition_probs):
     return log_transition_probs
 
 
-
 #Initialization
-
 #read in fasta file and json
 sequence = 'GTATGATTTTTTAAAATTATAATTGTTTCTTTCGAAAAAAAAAATTTCATTTACAG'
-with open("C:/Users/riyak/Documents/Honors_Thesis/HMMs/HMM_AlternativeSplicing.json", 'r') as f:
-    data = json.load(f)
-    
+with open("/u/rdesai/Downloads/Untitled-1.json", 'r') as f:
+    data = json.load(f)   
 #get values from json in log-scale
-o = data["order"][0] #order
 states = data["states"]
 transitions = log(data["transitions"])
 emits = log(data["emissions"])
-
+orders = []
+for i in states:
+    dict = emits[i]
+    order = len(list(dict.keys())[0]) - 1
+    orders.append(order)
 #initialize matrix and emmissions
 matrix = []
 p = math.log(1/len(states)) #initial state probability for index 0
@@ -35,31 +36,23 @@ for i in range(len(states)):
 temp_emit = .25
 
 
-
 #fill matrix
 n = 1
 calc = [0]*len(states) #to find the previous state
 for i in range(0, len(sequence)):
-    
-    if i < o:
-        for j in range(len(states)):
-            for k in range(len(states)):
+    for j in range(len(states)):
+        for k in range(len(states)):
+            if i < orders[j]:
                 calc[k] = matrix[k][n-1][0]+transitions[states[k]][states[j]]+temp_emit
-            matrix[j].append((max(calc), calc.index(max(calc))))
-    else:
-        seq = sequence[i-o: i+1]
-        for j in range(len(states)):
-            for k in range(len(states)):
+            else:
+                seq = sequence[i-orders[j]: i+1]
                 calc[k] = matrix[k][n-1][0]+transitions[states[k]][states[j]]+emits[states[j]][seq]
-            matrix[j].append((max(calc), calc.index(max(calc))))      
-    n+=1
-
-
+        matrix[j].append((max(calc), calc.index(max(calc))))
+    n += 1
 
 #Run viterbi
 length = len(sequence)
 output = [] #to store decoding
-
 #determine starting point state
 calc = [0]*len(states)
 for i in range(len(states)):
@@ -69,7 +62,6 @@ state = states[num]
 prob = matrix[num][length][0]
 prev_state = matrix[num][length][1]
 output.append((sequence[length-1], state, prob))
-
 #run for rest of bases
 for i in range(1, length):
     
@@ -85,7 +77,7 @@ for i in range(1, length):
     prev_state = matrix[prev_state][(i+1)*-1][1]
 
 
-
 #Display Results
 output = output[::-1]
-print(output)
+results = pd.DataFrame(output, columns = ["Base", "State", "Log Probability"])
+print(results)
