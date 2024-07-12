@@ -1,6 +1,13 @@
 import math
 import json
 import pandas as pd
+import argparse
+
+parser = argparse.ArgumentParser(description = "Return states of a genetic sequence and\
+                                                it's probability using viterbi decoding")
+parser.add_argument('HMM', type=str, help="path to json file that describes Hidden Markov Model")
+parser.add_argument('sequence', type=str, help="Gene sequence you are trying to decode")
+arg = parser.parse_args()
 
 # Function to convert probabilities to log scale
 def log(transition_probs):
@@ -15,8 +22,8 @@ def log(transition_probs):
 
 #Initialization
 #read in fasta file and json
-sequence = 'GTATGATTTTTTAAAATTATAATTGTTTCTTTCGAAAAAAAAAATTTCATTTACAG'
-with open("/u/rdesai/Downloads/Untitled-1.json", 'r') as f:
+sequence = arg.sequence
+with open(arg.HMM, 'r') as f:
     data = json.load(f)   
 #get values from json in log-scale
 states = data["states"]
