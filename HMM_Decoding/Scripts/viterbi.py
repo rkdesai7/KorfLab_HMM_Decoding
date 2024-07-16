@@ -44,10 +44,10 @@ temp_emit = .25
 #fill matrix
 n = 1
 calc = [0]*len(states) #to find the previous state
-for i in range(0, len(sequence)):
+for i in range(0, len(sequence)+1):
     for j in range(len(states)):
         for k in range(len(states)):
-            if i < orders[j]:
+            if i < (orders[j]+1):
                 calc[k] = matrix[k][n-1][0]+transitions[states[k]][states[j]]+temp_emit
             else:
                 seq = sequence[i-orders[j]: i+1]
