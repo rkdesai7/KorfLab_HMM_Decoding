@@ -79,9 +79,7 @@ for i in range(len(sequence), -1, -1):
                     seq = sequence[i-(orders[k]-1):i+2]
                     sum += transitions[states[j]][states[k]]+backward_matrix[k][i+1]+emits[states[k]][seq]
             backward_matrix[j][i] = sum
-
-#True probs
-#Get rid of temp values from forward and backward matrices
+#Get rid of beginning and ending values from forward and backward matrices
 for i in forward_matrix:
     i = i.pop(0)
 for i in backward_matrix:
