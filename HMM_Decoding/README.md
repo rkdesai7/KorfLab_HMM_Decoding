@@ -8,7 +8,7 @@ Example Hidden Markov Models in the form of a .json can be found in the Data fol
 
 ### Scripts
 
-The scripts folder contains python programs of decoding implementations. Currently, viterbi is implemented.
+The scripts folder contains python programs of decoding implementations. Currently, viterbi is implemented, and forward-backward is in progress.
 
 ### In Progress
 
