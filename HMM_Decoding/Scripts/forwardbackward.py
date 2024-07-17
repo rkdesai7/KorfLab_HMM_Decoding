@@ -87,3 +87,28 @@ for i in forward_matrix:
 for i in backward_matrix:
     i = i.pop()
 
+#Decode
+#Calculate new probabiliities
+true_probs = []
+for i in range(len(states)):
+    true_probs.append([])
+for i in range(len(forward_matrix[0])):
+    denominator = 0
+    for k in range(len(states)):
+        denominator += forward_matrix[k][i]*backward_matrix[k][i]
+    for j in range(len(states)):
+        numerator = forward_matrix[j][i]*backward_matrix[j][i]
+        prob = numerator/denominator
+        true_probs[j].append(prob)
+#Find the maximum
+decoded = []
+for i in range(len(true_probs[0])):
+    state = ""
+    prob = 0
+    for j in range(len(states)):
+        if true_probs[j][i] > prob:
+            prob = true_probs[j][i]
+            state = states[j]
+    decoded.append((sequence[i], state, prob))
+print(decoded)
+
