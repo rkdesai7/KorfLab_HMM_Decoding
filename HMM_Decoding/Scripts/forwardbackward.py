@@ -40,10 +40,11 @@ for i in states:
 
 #Forward Fill
 #initialize matrix and emmissions
-forward_matrix = []
-p = math.log(1/len(states)) #initial state probability for index 0
-for i in range(len(states)):
-    forward_matrix.append([p])
+#Preallocate ahead of time
+forward_matrix = [[.66], [.33]]
+#p = math.log(1/len(states)) #initial state probability for index 0
+#for i in range(len(states)):
+#    forward_matrix.append([p])
 temp_emit = math.log(.25)
 #fill matrix
 for i in range(1, len(sequence)):
@@ -59,6 +60,7 @@ for i in range(1, len(sequence)):
 
 #Backward Fill
 #Initialize Empty
+#Preallocate ahead of time
 backward_matrix = []
 for i in range(len(states)):
     temp = [0]*(len(sequence)+1)
@@ -80,6 +82,7 @@ for i in range(len(sequence), -1, -1):
                     sum += transitions[states[j]][states[k]]+backward_matrix[k][i+1]+emits[states[k]][seq]
             backward_matrix[j][i] = sum
 #Get rid of beginning and ending values from forward and backward matrices
+#Don't need to pop
 for i in forward_matrix:
     i = i.pop(0)
 for i in backward_matrix:
@@ -99,6 +102,8 @@ for i in range(len(forward_matrix[0])):
         prob = numerator/denominator
         true_probs[j].append(prob)
 #Find the maximum
+#More interested in true_probs, don't need to 'decode'
+#Could make a graph?
 decoded = []
 for i in range(len(true_probs[0])):
     state = ""
@@ -108,5 +113,6 @@ for i in range(len(true_probs[0])):
             prob = true_probs[j][i]
             state = states[j]
     decoded.append((sequence[i], state, prob))
-print(decoded)
+for i in decoded:
+    print(i)
 
