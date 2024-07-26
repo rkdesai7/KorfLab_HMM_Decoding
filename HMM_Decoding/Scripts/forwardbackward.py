@@ -2,11 +2,15 @@ import math
 import json
 import pandas as pd
 import argparse
+import matplotlib.pyplot as plt
+import numpy as np
 
 parser = argparse.ArgumentParser(description = "Return states of a genetic sequence and\
                                                 it's probability using viterbi decoding")
 parser.add_argument('HMM', type=str, help="path to json file that describes Hidden Markov Model")
 parser.add_argument('sequence', type=str, help="Gene sequence you are trying to decode")
+parser.add_argument('--state', type = str, default = 'exon', help="Name of state you want a probability graph for")
+
 arg = parser.parse_args()
 
 # Functions
@@ -41,10 +45,10 @@ for i in states:
 #Forward Fill
 #initialize matrix and emmissions
 #Preallocate ahead of time
-forward_matrix = [[.66], [.33]]
-#p = math.log(1/len(states)) #initial state probability for index 0
-#for i in range(len(states)):
-#    forward_matrix.append([p])
+forward_matrix = []
+p = math.log(1/len(states)) #initial state probability for index 0
+for i in range(len(states)):
+    forward_matrix.append([p])
 temp_emit = math.log(.25)
 #fill matrix
 for i in range(1, len(sequence)):
@@ -101,9 +105,18 @@ for i in range(len(forward_matrix[0])):
         numerator = forward_matrix[j][i]*backward_matrix[j][i]
         prob = numerator/denominator
         true_probs[j].append(prob)
-#Find the maximum
-#More interested in true_probs, don't need to 'decode'
+        
 #Could make a graph?
+s = states.index(arg.state)
+x = list(range(1, len(sequence)+1))
+y = np.array(true_probs[s])
+plt.plot(x, y)
+plt.title("Probability that Each Position is in state {arg.state}")
+plt.xlabel("Position")
+plt.ylabel("Probability")
+plt.show()
+
+#Find the maximum
 decoded = []
 for i in range(len(true_probs[0])):
     state = ""
