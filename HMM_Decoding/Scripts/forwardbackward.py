@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description = "Return states of a genetic seque
                                                 it's probability using viterbi decoding")
 parser.add_argument('HMM', type=str, help="path to json file that describes Hidden Markov Model")
 parser.add_argument('sequence', type=str, help="Gene sequence you are trying to decode")
-parser.add_argument('--state', type = str, default = 'exon', help="Name of state you want a probability graph for")
+parser.add_argument('--state', type = str, default = 'exon1', help="Name of state you want a probability graph for")
 
 arg = parser.parse_args()
 
@@ -111,12 +111,12 @@ s = states.index(arg.state)
 x = list(range(1, len(sequence)+1))
 y = np.array(true_probs[s])
 plt.plot(x, y)
-plt.title("Probability that Each Position is in state {arg.state}")
+plt.title("Probability that Each Position is in state", arg.state)
 plt.xlabel("Position")
 plt.ylabel("Probability")
 plt.show()
 
-#Find the maximum
+#Find the maximums
 decoded = []
 for i in range(len(true_probs[0])):
     state = ""
