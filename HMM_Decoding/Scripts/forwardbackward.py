@@ -109,9 +109,7 @@ for i in range(len(forward_matrix[0])):
 #Could make a graph?
 s = states.index(arg.state)
 x = np.array(list(range(1, len(sequence)+1)))
-print(x)
 y = np.array(true_probs[s])
-print(y)
 plt.plot(x, y)
 state_name = "Probability that each position is in state " + arg.state
 plt.title(state_name)
