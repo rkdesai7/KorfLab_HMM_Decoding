@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description = "Return states of a genetic seque
                                                 it's probability using viterbi decoding")
 parser.add_argument('HMM', type=str, help="path to json file that describes Hidden Markov Model")
 parser.add_argument('sequence', type=str, help="Gene sequence you are trying to decode")
-parser.add_argument('--state', type = str, default = 'exon1', help="Name of state you want a probability graph for")
+parser.add_argument('--state', type=str, default = "exon", help="Name of state you want a probability graph for")
 
 arg = parser.parse_args()
 
@@ -51,14 +51,14 @@ for i in range(len(states)):
     forward_matrix.append([p])
 temp_emit = math.log(.25)
 #fill matrix
-for i in range(1, len(sequence)):
+for i in range(1, len(sequence)+1):
     for j in range(len(states)):
         sum = 0
         for k in range(len(states)):
             if i < orders[j]+1:
                 sum += calc_forward(j, k, i, forward_matrix, transitions, temp_emit)
             else:
-                seq = sequence[i-orders[j]: i+1]
+                seq = sequence[i-orders[j]-1: i]
                 sum += calc_forward(j, k, i, forward_matrix, transitions, emits[states[j]][seq])
         forward_matrix[j].append(sum)
 
@@ -105,15 +105,19 @@ for i in range(len(forward_matrix[0])):
         numerator = forward_matrix[j][i]*backward_matrix[j][i]
         prob = numerator/denominator
         true_probs[j].append(prob)
-        
+
 #Could make a graph?
 s = states.index(arg.state)
-x = list(range(1, len(sequence)+1))
+x = np.array(list(range(1, len(sequence)+1)))
+print(x)
 y = np.array(true_probs[s])
+print(y)
 plt.plot(x, y)
-plt.title("Probability that Each Position is in state", arg.state)
+state_name = "Probability that each position is in state " + arg.state
+plt.title(state_name)
 plt.xlabel("Position")
 plt.ylabel("Probability")
+print(arg.state)
 plt.show()
 
 #Find the maximums
