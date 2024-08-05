@@ -98,11 +98,10 @@ hmm = {}
 
 # states
 hmm['states'] = {}
-hmm['states']['exon1'] = arg.emm
+hmm['states']['exon'] = arg.emm
 for i in range(arg.don): hmm['states'][f'don-{i}'] = 0
 hmm['states']['intron'] = arg.imm
 for i in range(arg.acc): hmm['states'][f'acc-{i}'] = 0
-hmm['states']['exon2'] = arg.emm
 
 # transitions
 hmm['transitions'] = {}
@@ -110,8 +109,8 @@ for s1 in hmm['states']:
 	if s1 not in hmm['transitions']: hmm['transitions'][s1] = {}
 	for s2 in hmm['states']:
 		if s2 not in hmm['transitions'][s1]: hmm['transitions'][s1][s2] = 0
-hmm['transitions']['exon1']['exon1'] = arg.eet
-hmm['transitions']['exon1']['don-0'] = 1 - arg.eet
+hmm['transitions']['exon']['exon'] = arg.eet
+hmm['transitions']['exon']['don-0'] = 1 - arg.eet
 for i in range(arg.don -1):
 	hmm['transitions'][f'don-{i}'][f'don-{i+1}'] = 1.0
 hmm['transitions'][f'don-{arg.don -1}']['intron'] = 1.0
@@ -119,16 +118,14 @@ hmm['transitions']['intron']['intron'] = 1 - (1/ilen)
 hmm['transitions']['intron']['acc-0'] = 1 / ilen
 for i in range(arg.acc -1):
 	hmm['transitions'][f'acc-{i}'][f'acc-{i+1}'] = 1
-hmm['transitions'][f'acc-{arg.acc -1}']['exon2'] = 1
-hmm['transitions']['exon2']['exon2'] = 1
+hmm['transitions'][f'acc-{arg.acc -1}']['exon'] = 1
 
 # emissions
 hmm['emissions'] = {}
-hmm['emissions']['exon1'] = emm
+hmm['emissions']['exon'] = emm
 for i in range(arg.don): hmm['emissions'][f'don-{i}'] = don[i]
 hmm['emissions']['intron'] = imm
 for i in range(arg.acc): hmm['emissions'][f'acc-{i}'] = acc[i]
-hmm['emissions']['exon2'] = emm
 
 print(json.dumps(hmm, indent=4))
 
