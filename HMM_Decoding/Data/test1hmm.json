@@ -4,6 +4,16 @@
         "intron",
         "exon2"
     ],
+    "initials": {
+    	"exon1": 1.0,
+    	"intron": 0.0,
+    	"exon2": 0.0
+    },
+    "terminals": {
+    	"exon1": 0.0,
+    	"intron": 0.0,
+    	"exon2": 1.0
+    },
     "transitions": {
         "exon1": {
             "exon1": 0.9,
