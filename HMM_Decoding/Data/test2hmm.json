@@ -1,0 +1,44 @@
+{
+    "states": [
+        "exon1",
+        "intron",
+        "exon2"
+    ],
+    "transitions": {
+        "exon1": {
+            "exon1": 0.9,
+            "intron": 0.1,
+            "exon2": 0.0
+        },
+        "intron": {
+            "exon1": 0.0,
+            "intron": 0.9,
+            "exon2": 0.1
+        },
+        "exon2": {
+            "exon1": 0.0,
+            "intron": 0.0,
+            "exon2": 1.0
+        }
+    },
+    "emissions": {
+        "exon1": {
+        	"A": 0.01,
+        	"C": 0.97,
+        	"G": 0.01,
+        	"T": 0.01
+        },
+        "intron": {
+        	"A": 0.97,
+        	"C": 0.01,
+        	"G": 0.01,
+        	"T": 0.01
+        },
+        "exon2": {
+     	   	"A": 0.01,
+        	"C": 0.01,
+        	"G": 0.97,
+        	"T": 0.01
+        }
+    }
+}
