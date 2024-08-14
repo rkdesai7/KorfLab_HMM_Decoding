@@ -15,7 +15,7 @@ parser.add_argument('--state', type=str, default = "exon1", help="Name of state 
 parser.add_argument('--output', type=str, default = "GFF", help="Output format. Option include 'Wiggle', 'Bed', and 'GFF'")
 arg = parser.parse_args()
 
-# Functions
+
 def log(transition_probs):
     log_transition_probs = {}
     for from_state, to_probs in transition_probs.items():
@@ -34,6 +34,18 @@ def filter_sequence(seq):
             print("Sequence has an incorrect format and must only contain nucleotides (A, C, G, or T).")
             sys.exit()
     return True
+#def self():
+    #read in data
+#def main():
+    #run and return desired output
+#def forward():
+    #run forward fill
+#def backward():
+    #run backward fill
+#def true():
+    #calc true probs
+#def graph():
+    #return graph
 #def wiggle():
     #return output
 #def bed():
