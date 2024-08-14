@@ -4,13 +4,15 @@ import pandas as pd
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
-
+import sys
+import gzip
+   
 parser = argparse.ArgumentParser(description = "Return states of a genetic sequence and\
                                                 it's probability using viterbi decoding")
 parser.add_argument('HMM', type=str, help="path to json file that describes Hidden Markov Model")
 parser.add_argument('sequence', type=str, help="Gene sequence you are trying to decode")
-parser.add_argument('--state', type=str, default = "exon", help="Name of state you want a probability graph for")
-
+parser.add_argument('--state', type=str, default = "exon1", help="Name of state you want a probability graph for")
+parser.add_argument('--output', type=str, default = "GFF", help="Output format. Option include 'Wiggle', 'Bed', and 'GFF'")
 arg = parser.parse_args()
 
 # Functions
@@ -19,17 +21,31 @@ def log(transition_probs):
     for from_state, to_probs in transition_probs.items():
         log_to_probs = {}
         for to_state, prob in to_probs.items():
-            log_prob = math.log(prob)
+            if prob > 0:
+                log_prob = math.log(prob)
+            else:
+                log_prob = -99
             log_to_probs[to_state] = log_prob
         log_transition_probs[from_state] = log_to_probs
     return log_transition_probs
+def filter_sequence(seq):
+    for i in seq:
+        if i != ('A' or 'G' or 'C' or 'T'):
+            print("Sequence has an incorrect format and must only contain nucleotides (A, C, G, or T).")
+            sys.exit()
+    return True
+#def wiggle():
+    #return output
+#def bed():
+    #return output
+#def gff():
+    #return output
 
-def calc_forward(j, k, n, matrix, transitions, emission):
-    return matrix[k][n-1]+transitions[states[k]][states[j]]+emission
 
 #Initialization
 #read in fasta file and json
-sequence = arg.sequence
+if filter_sequence(arg.sequence.upper()):
+    sequence = arg.sequence.upper()
 with open(arg.HMM, 'r') as f:
     data = json.load(f)   
 #get values from json in log-scale
@@ -44,7 +60,6 @@ for i in states:
 
 #Forward Fill
 #initialize matrix and emmissions
-#Preallocate ahead of time
 forward_matrix = []
 p = math.log(1/len(states)) #initial state probability for index 0
 for i in range(len(states)):
@@ -56,41 +71,37 @@ for i in range(1, len(sequence)+1):
         sum = 0
         for k in range(len(states)):
             if i < orders[j]+1:
-                sum += calc_forward(j, k, i, forward_matrix, transitions, temp_emit)
+                sum += forward_matrix[k][i-1]+transitions[states[k]][states[j]]+temp_emit
             else:
                 seq = sequence[i-orders[j]-1: i]
-                sum += calc_forward(j, k, i, forward_matrix, transitions, emits[states[j]][seq])
+                sum += forward_matrix[k][i-1]+transitions[states[k]][states[j]]+emits[states[j]][seq]
         forward_matrix[j].append(sum)
+for i in forward_matrix:
+    i = i.pop(0)
 
 #Backward Fill
-#Initialize Empty
 #Preallocate ahead of time
 backward_matrix = []
 for i in range(len(states)):
-    temp = [0]*(len(sequence)+1)
+    temp = [0]*(len(sequence))
     backward_matrix.append(temp)
 #Fill matrix
 for i in range(len(sequence), -1, -1):
     if i == len(sequence):
+        continue
+    elif (i+1)==len(sequence):
         for j in backward_matrix:
-            j[i] = 1
+            j[i] = 0
     else:
         for j in range(len(states)):
             sum = 0
             for k in range(len(states)):
-                if (i+1) < (orders[k]+1) or (i+1)==len(sequence):
+                if (i+1) < (orders[k]+1):
                     sum += transitions[states[j]][states[k]]+temp_emit+backward_matrix[k][i+1]
                 else:
-                  #Turn this into a function
                     seq = sequence[i-(orders[k]-1):i+2]
                     sum += transitions[states[j]][states[k]]+backward_matrix[k][i+1]+emits[states[k]][seq]
             backward_matrix[j][i] = sum
-#Get rid of beginning and ending values from forward and backward matrices
-#Don't need to pop
-for i in forward_matrix:
-    i = i.pop(0)
-for i in backward_matrix:
-    i = i.pop()
 
 #Decode
 #Calculate new probabiliities
@@ -100,13 +111,14 @@ for i in range(len(states)):
 for i in range(len(forward_matrix[0])):
     denominator = 0
     for k in range(len(states)):
-        denominator += forward_matrix[k][i]*backward_matrix[k][i]
+        denominator += forward_matrix[k][i]+backward_matrix[k][i]
+        print(i, denominator)
     for j in range(len(states)):
-        numerator = forward_matrix[j][i]*backward_matrix[j][i]
-        prob = numerator/denominator
+        numerator = forward_matrix[j][i]+backward_matrix[j][i]
+        prob = numerator-denominator
         true_probs[j].append(prob)
 
-#Could make a graph?
+#Graph?
 s = states.index(arg.state)
 x = np.array(list(range(1, len(sequence)+1)))
 y = np.array(true_probs[s])
@@ -130,4 +142,3 @@ for i in range(len(true_probs[0])):
     decoded.append((sequence[i], state, prob))
 for i in decoded:
     print(i)
-
