@@ -16,9 +16,9 @@ parser.add_argument('--output', type=str, default = "GFF", help="Output format. 
 arg = parser.parse_args()
 
 
-def log(transition_probs):
-    log_transition_probs = {}
-    for from_state, to_probs in transition_probs.items():
+def log_dict(probs_dict):
+    log_probs = {}
+    for from_state, to_probs in probs_dict.items():
         log_to_probs = {}
         for to_state, prob in to_probs.items():
             if prob > 0:
@@ -26,8 +26,9 @@ def log(transition_probs):
             else:
                 log_prob = -99
             log_to_probs[to_state] = log_prob
-        log_transition_probs[from_state] = log_to_probs
-    return log_transition_probs
+        log_probs[from_state] = log_to_probs
+    return log_probs
+   
 def filter_sequence(seq):
     valid = ['A', 'G', 'C', 'T']
     for i in seq:
@@ -35,6 +36,13 @@ def filter_sequence(seq):
             print("Sequence has an incorrect format and must only contain nucleotides (A, C, G, or T).")
             sys.exit()
     return True
+
+def add_logspace(a, b, thresh = 40):
+   a = math.exp(a)
+   b = math.exp(b)
+   if abs(a - b) > thresh: return max(a, b)
+   if a < b: return math.log(1 + math.exp(a - b)) + b
+	return math.log(1 + math.exp(b - a)) + a
 #def self():
     #read in data
 #def main():
@@ -63,8 +71,8 @@ with open(arg.HMM, 'r') as f:
     data = json.load(f)   
 #get values from json in log-scale
 states = data["states"]
-transitions = log(data["transitions"])
-emits = log(data["emissions"])
+transitions = log_dict(data["transitions"])
+emits = log_dict(data["emissions"])
 orders = []
 for i in states:
     dict = emits[i]
