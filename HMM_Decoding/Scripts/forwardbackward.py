@@ -7,12 +7,11 @@ import numpy as np
 import sys
 import gzip
    
-parser = argparse.ArgumentParser(description = "Return states of a genetic sequence and\
-                                                it's probability using viterbi decoding")
+parser = argparse.ArgumentParser(description = "Return states of a genetic sequence and it's probability using forward backward decoding")
 parser.add_argument('HMM', type=str, help="path to json file that describes Hidden Markov Model")
 parser.add_argument('sequence', type=str, help="Gene sequence you are trying to decode")
 parser.add_argument('--state', type=str, default = "exon1", help="Name of state you want a probability graph for")
-parser.add_argument('--output', type=str, default = "GFF", help="Output format. Option include 'Wiggle', 'Bed', and 'GFF'")
+parser.add_argument('--output', type=str, default = "GFF", help="Output format. Options include 'Wiggle', 'Bed', and 'GFF'")
 arg = parser.parse_args()
 
 
