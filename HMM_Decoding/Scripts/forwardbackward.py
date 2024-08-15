@@ -10,8 +10,8 @@ import gzip
 parser = argparse.ArgumentParser(description = "Return states of a genetic sequence and it's probability using forward backward decoding")
 parser.add_argument('HMM', type=str, help="path to json file that describes Hidden Markov Model")
 parser.add_argument('sequence', type=str, help="Gene sequence you are trying to decode")
-parser.add_argument('--state', type=str, default = "exon1", help="Name of state you want a probability graph for")
-parser.add_argument('--output', type=str, default = "GFF", help="Output format. Options include 'Wiggle', 'Bed', and 'GFF'")
+parser.add_argument('--state', type=str, default = "exon1", help="Name of state you want to see in the output")
+parser.add_argument('--output', type=str, default = "GFF", help="Output format. Options include 'Graph', 'Wiggle', 'Bed', and 'GFF'")
 arg = parser.parse_args()
 
 
@@ -42,18 +42,30 @@ def add_logspace(a, b, thresh = 40):
    if abs(a - b) > thresh: return max(a, b)
    if a < b: return math.log(1 + math.exp(a - b)) + b
 	return math.log(1 + math.exp(b - a)) + a
-#def self():
-    #read in data
-#def main():
-    #run and return desired output
-#def forward():
-    #run forward fill
-#def backward():
-    #run backward fill
-#def true():
-    #calc true probs
-#def graph():
-    #return graph
+
+def graph(states, true_probs, sequence):
+	
+    s = states.index(arg.state)
+    x = np.array(list(range(1, len(sequence)+1)))
+    y = np.array(true_probs[s])
+    plt.plot(x, y)
+    state_name = "Probability that each position is in state " + arg.state
+    plt.title(state_name)
+    plt.xlabel("Position")
+    plt.ylabel("Probability")
+    plt.show()
+	
+    decoded = []
+    for i in range(len(true_probs[0])):
+        state = ""
+        prob = 0
+        for j in range(len(states)):
+            if true_probs[j][i] > prob:
+                prob = true_probs[j][i]
+                state = states[j]
+        decoded.append((sequence[i], state, prob))
+    for i in decoded:
+        print(i)
 #def wiggle():
     #return output
 #def bed():
@@ -148,26 +160,6 @@ for i in range(len(forward_matrix[0])):
         prob = numerator/denominator
         true_probs[j].append(prob)
 
-#Graph?
-s = states.index(arg.state)
-x = np.array(list(range(1, len(sequence)+1)))
-y = np.array(true_probs[s])
-plt.plot(x, y)
-state_name = "Probability that each position is in state " + arg.state
-plt.title(state_name)
-plt.xlabel("Position")
-plt.ylabel("Probability")
-plt.show()
-
-#Find the maximums
-decoded = []
-for i in range(len(true_probs[0])):
-    state = ""
-    prob = 0
-    for j in range(len(states)):
-        if true_probs[j][i] > prob:
-            prob = true_probs[j][i]
-            state = states[j]
-    decoded.append((sequence[i], state, prob))
-for i in decoded:
-    print(i)
+#Output
+if arg.output == "Graph":
+    graph(states, true_probs, sequence)
