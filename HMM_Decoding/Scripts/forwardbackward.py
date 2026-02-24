@@ -2,181 +2,182 @@ import math
 import json
 import pandas as pd
 import argparse
-import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import gzip
-   
-parser = argparse.ArgumentParser(description = "Return states of a genetic sequence and it's probability using forward backward decoding")
+
+parser = argparse.ArgumentParser(description="Return states of a genetic sequence and its probability using forward backward decoding")
 parser.add_argument('HMM', type=str, help="path to json file that describes Hidden Markov Model")
 parser.add_argument('sequence', type=str, help="Gene sequence you are trying to decode")
-parser.add_argument('--state', type=str, default = "exon1", help="Name of state you want to see in the output")
-parser.add_argument('--output', type=str, default = "GFF", help="Output format. Options include 'Wiggle', 'Bed', and 'GFF'")
+parser.add_argument('--state', type=str, default="exon1", help="Name of state you want to see in the output")
+parser.add_argument('--output', type=str, default="GFF", help="Output format. Options include 'Wiggle', 'Bed', and 'GFF'")
 arg = parser.parse_args()
+
+NEG_INF = float('-inf')
 
 
 def log_dict(probs_dict):
+    """Convert a nested probability dict to log-space."""
     log_probs = {}
     for from_state, to_probs in probs_dict.items():
         log_to_probs = {}
         for to_state, prob in to_probs.items():
-            if prob > 0:
-                log_prob = math.log(prob)
-            else:
-                log_prob = -99
-            log_to_probs[to_state] = log_prob
+            log_to_probs[to_state] = math.log(prob) if prob > 0 else NEG_INF
         log_probs[from_state] = log_to_probs
-    return log_probs   
-def add_logspace(a, b, thresh = 40):
-    a = math.exp(a)
-    b = math.exp(b)
-    if abs(a - b) > thresh: return max(a, b)
-    if a < b: return math.log(1 + math.exp(a - b)) + b
-    return math.log(1 + math.exp(b - a)) + a
+    return log_probs
+
+
+def logsumexp(log_values):
+    """Numerically stable log-sum-exp over a list of log-space values."""
+    log_values = [v for v in log_values if v != NEG_INF]
+    if not log_values:
+        return NEG_INF
+    max_val = max(log_values)
+    return max_val + math.log(sum(math.exp(v - max_val) for v in log_values))
+
+
 def readfasta(filename):
+    name = None
+    seqs = []
 
-	name = None
-	seqs = []
+    fp = None
+    if   filename.endswith('.gz'): fp = gzip.open(filename, 'rt')
+    elif filename == '-':          fp = sys.stdin
+    else:                          fp = open(filename)
 
-	fp = None
-	if   filename.endswith('.gz'): fp = gzip.open(filename, 'rt')
-	elif filename == '-':          fp = sys.stdin
-	else:                          fp = open(filename)
-
-	while True:
-		line = fp.readline()
-		if line == '': break
-		line = line.rstrip()
-		if line.startswith('>'):
-			if len(seqs) > 0:
-				seq = ''.join(seqs)
-				yield(name, seq)
-				name = line[1:]
-				seqs = []
-			else:
-				name = line[1:]
-		else:
-			seqs.append(line)
-	yield(name, ''.join(seqs))
-	fp.close()
-def run(states, sequence, orders, emits):
-    #Forward Fill
-    forward_matrix = []
-    p = 1/len(states) #initial state probability for index 0
-    for i in range(len(states)):
-        forward_matrix.append([p])
-    temp_emit = math.log(.25)
-    #fill matrix
-    for i in range(1, len(sequence)+1):
-        for j in range(len(states)):
-            sum = 0
-            for k in range(len(states)):
-                if i < orders[j]+1:
-                    prev_prob = math.log(forward_matrix[k][i-1])
-                    prob = prev_prob+transitions[states[k]][states[j]]+temp_emit
-                    sum += math.exp(prob)
-                else:
-                    seq = sequence[i-orders[j]-1: i]
-                    prev_prob = math.log(forward_matrix[k][i-1])
-                    prob = prev_prob+transitions[states[k]][states[j]]+emits[states[j]][seq]
-                    sum += math.exp(prob)
-            forward_matrix[j].append(sum)
-    for i in forward_matrix:
-        i = i.pop(0)
-    #Backward Fill
-    backward_matrix = []
-    for i in range(len(states)):
-        temp = [0]*(len(sequence))
-        backward_matrix.append(temp)
-    #Fill matrix
-    for i in range(len(sequence), -1, -1):
-        if i == len(sequence):
-            continue
-        elif (i+1)==len(sequence):
-            for j in backward_matrix:
-                j[i] = 1
+    while True:
+        line = fp.readline()
+        if line == '': break
+        line = line.rstrip()
+        if line.startswith('>'):
+            if len(seqs) > 0:
+                seq = ''.join(seqs)
+                yield (name, seq)
+                name = line[1:]
+                seqs = []
+            else:
+                name = line[1:]
         else:
-            for j in range(len(states)):
-                sum = 0
-                for k in range(len(states)):
-                    if (i+1) < (orders[k]+1):
-                        prev = math.log(backward_matrix[k][i+1])
-                        prob = transitions[states[j]][states[k]]+prev+temp_emit
-                        sum += math.exp(prob)
-                    else:
-                        seq = sequence[i-(orders[k]-1):i+2]
-                        prev = math.log(backward_matrix[k][i+1])
-                        prob = transitions[states[j]][states[k]]+prev+emits[states[k]][seq]
-                        sum += math.exp(prob)
-                backward_matrix[j][i] = sum
-    #Decode
-    true_probs = []
-    for i in range(len(states)):
-        true_probs.append([])
-    for i in range(len(forward_matrix[0])):
-        denominator = 0
-        for k in range(len(states)):
-            denominator += forward_matrix[k][i]*backward_matrix[k][i]
-        for j in range(len(states)):
-            numerator = forward_matrix[j][i]*backward_matrix[j][i]
-            prob = numerator/denominator
-            true_probs[j].append(prob)
+            seqs.append(line)
+    yield (name, ''.join(seqs))
+    fp.close()
+
+
+def run(states, sequence, orders, emits):
+    n_states = len(states)
+    n_obs = len(sequence)
+    LOG_UNIFORM = math.log(0.25)  # fallback emission for low-order positions
+
+
+    # Initialise: uniform start probability, log(1/n_states)
+    log_init = math.log(1.0 / n_states)
+
+    # forward[j] is a list of length n_obs
+    forward = [[NEG_INF] * n_obs for _ in range(n_states)]
+
+    for j in range(n_states):
+        # Emission at position 0
+        if orders[j] == 0:
+            seq_key = sequence[0]
+            log_emit = emits[states[j]].get(seq_key, NEG_INF)
+        else:
+            log_emit = LOG_UNIFORM  # not enough context yet
+        forward[j][0] = log_init + log_emit
+
+    for i in range(1, n_obs):
+        for j in range(n_states):
+            # Emission: need orders[j] preceding characters + current
+            if i < orders[j]:
+                log_emit = LOG_UNIFORM
+            else:
+                seq_key = sequence[i - orders[j]: i + 1]
+                log_emit = emits[states[j]].get(seq_key, NEG_INF)
+
+            # Sum over all previous states k
+            log_trans_terms = [
+                forward[k][i - 1] + transitions[states[k]][states[j]]
+                for k in range(n_states)
+            ]
+            forward[j][i] = logsumexp(log_trans_terms) + log_emit
+
+    backward = [[NEG_INF] * n_obs for _ in range(n_states)]
+
+    # Base case: log(1) = 0 at the last position
+    for j in range(n_states):
+        backward[j][n_obs - 1] = 0.0
+
+    for i in range(n_obs - 2, -1, -1):
+        for j in range(n_states):
+            log_terms = []
+            for k in range(n_states):
+                # Emission of state k at position i+1
+                if (i + 1) < orders[k]:
+                    log_emit = LOG_UNIFORM
+                else:
+                    seq_key = sequence[(i + 1) - orders[k]: i + 2]
+                    log_emit = emits[states[k]].get(seq_key, NEG_INF)
+
+                term = (transitions[states[j]][states[k]]
+                        + log_emit
+                        + backward[k][i + 1])
+                log_terms.append(term)
+            backward[j][i] = logsumexp(log_terms)
+    #decoding
+    true_probs = [[0.0] * n_obs for _ in range(n_states)]
+
+    for i in range(n_obs):
+        # log denominator = log P(obs) via forward + backward at any position
+        log_denom = logsumexp([forward[k][i] + backward[k][i] for k in range(n_states)])
+
+        for j in range(n_states):
+            log_num = forward[j][i] + backward[j][i]
+            true_probs[j][i] = math.exp(log_num - log_denom) if log_denom != NEG_INF else 0.0
+
     return true_probs
+
+
 def find_probable_state(true_probs, states, sequence):
+    """At each position pick the state with the highest posterior probability."""
     decoded = []
     for i in range(len(true_probs[0])):
-        state = ""
-        prob = 0
-        for j in range(len(states)):
-            if true_probs[j][i] > prob:
-                prob = true_probs[j][i]
-                state = states[j]
-        decoded.append((sequence[i], state))
+        best_state = max(range(len(states)), key=lambda j: true_probs[j][i])
+        decoded.append((sequence[i], states[best_state]))
     return decoded
+
+
 def gff(dataset):
+    rows = []
     for name, probs in dataset.items():
-        ranges = []
         curr_state = None
         start_index = 0
         for i, (pos, state) in enumerate(probs):
             if i == 0:
                 curr_state = state
-                start_index = i + 1
+                start_index = 1  # GFF is 1-based
                 continue
             if state != curr_state:
-                ranges.append((name, curr_state, start_index, i))
-                start_index = i+1
-            #Start new range
-            curr_state = state
+                rows.append((name, curr_state, start_index, i))  # end is i (1-based inclusive)
+                curr_state = state
+                start_index = i + 1
+        # Append final segment
         if curr_state is not None:
-            ranges.append((name, curr_state, start_index+1, i+1))
-    return pd.DataFrame(ranges, columns = {"Name":[], "State":[], "Start":[], "End":[]})
-#def wiggle():
-    #return output
-#def bed():
-    #return output
+            rows.append((name, curr_state, start_index, len(probs)))
+    return pd.DataFrame(rows, columns=["Name", "State", "Start", "End"])
 
-
-#read in json
 with open(arg.HMM, 'r') as f:
-    data = json.load(f)   
-#get values from json in log-scale
+    data = json.load(f)
+
 states = data["states"]
 transitions = log_dict(data["transitions"])
 emits = log_dict(data["emissions"])
-orders = []
-for i in states:
-    dict = emits[i]
-    order = len(list(dict.keys())[0]) - 1
-    orders.append(order)
-list_of_seq = readfasta(arg.sequence)
+
+# Infer emission order from key length (order-n means key has n+1 chars)
+orders = [len(next(iter(emits[s]))) - 1 for s in states]
+
 dataset = {}
-for i in list_of_seq:
-    sequence = i[1]
-    name = i[0]
+for name, sequence in readfasta(arg.sequence):
     true_probs = run(states, sequence, orders, emits)
-    dataset[name] =  find_probable_state(true_probs, states, sequence)
-    print(dataset)
-#Output
+    dataset[name] = find_probable_state(true_probs, states, sequence)
+
 if arg.output == "GFF":
-    print(gff(dataset))
+    print(gff(dataset).to_string(index=False))
